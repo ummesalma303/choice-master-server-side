@@ -30,10 +30,26 @@ async function run() {
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     /* --------------------- create database with collection --------------------- */
-    const productsCollection = client.db("recommendProductsDB").collection("products");
+    const queryCollection = client.db("queryDB").collection("queries");
 /* ----------------------------- write code here ---------------------------- */
 
+app.post('/add-queries',async(req,res)=>{
+  const data = req.body
+  console.log(data)
+  const result = await queryCollection.insertOne(data);
+  res.send(result)
+})
 
+app.get('/homeQueries',async (req,res)=>{
+    const result = await queryCollection.find().sort({currentTime:-1}).limit(6).toArray();
+    console.log("line 54", result)
+    res.send(result)
+})
+app.get('/allQueries',async (req,res)=>{
+    const result = await queryCollection.find().sort({currentTime:1}).toArray();
+    console.log("line 54", result)
+    res.send(result)
+})
 
 
 
