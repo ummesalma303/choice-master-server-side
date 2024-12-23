@@ -40,16 +40,31 @@ app.post('/add-queries',async(req,res)=>{
   res.send(result)
 })
 
-app.get('/homeQueries',async (req,res)=>{
+/* ----------------------------- recent queries ----------------------------- */
+app.get('/recentQueries',async (req,res)=>{
     const result = await queryCollection.find().sort({currentTime:-1}).limit(6).toArray();
-    console.log("line 54", result)
+    // console.log("line 54", result)
     res.send(result)
 })
+/* ------------------------------- all queries ------------------------------ */
 app.get('/allQueries',async (req,res)=>{
-    const result = await queryCollection.find().sort({currentTime:1}).toArray();
-    console.log("line 54", result)
+    const result = await queryCollection.find().sort({currentTime:-1}).toArray();
+    // console.log("line 54", result)
     res.send(result)
 })
+/* ------------------------------- my queries ------------------------------- */
+app.get('/myQueries/:email',async (req,res)=>{
+  const email = req.params.email
+  const query = {email:email}
+  // console.log(email)
+    const result = await queryCollection.find(query).sort({currentTime:-1}).toArray();
+    console.log("line 57", result)
+    res.send(result)
+})
+
+/* ------------------------------ query details ----------------------------- */
+
+
 
 
 
