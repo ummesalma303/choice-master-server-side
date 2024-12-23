@@ -8,7 +8,7 @@ app.use(cors())
 app.use(express.json())
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ot76b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // const uri = "mongodb://localhost:27017/"
 
@@ -31,14 +31,11 @@ async function run() {
 
     /* --------------------- create database with collection --------------------- */
     const queryCollection = client.db("queryDB").collection("queries");
+    const recommendCollection = client.db("queryDB").collection("recommends");
+
 /* ----------------------------- write code here ---------------------------- */
 
-app.post('/add-queries',async(req,res)=>{
-  const data = req.body
-  console.log(data)
-  const result = await queryCollection.insertOne(data);
-  res.send(result)
-})
+
 
 /* ----------------------------- recent queries ----------------------------- */
 app.get('/recentQueries',async (req,res)=>{
@@ -57,16 +54,52 @@ app.get('/myQueries/:email',async (req,res)=>{
   const email = req.params.email
   const query = {email:email}
   // console.log(email)
+  // const currentTime = parseInt(currentTime)
     const result = await queryCollection.find(query).sort({currentTime:-1}).toArray();
-    console.log("line 57", result)
+    // console.log("line 57", result)
     res.send(result)
 })
 
 /* ------------------------------ query details ----------------------------- */
+app.get('/allQueries/:id',async (req,res)=>{
+  const id = req.params.id
+  
+  const query = {_id:new ObjectId(id)}
+ 
+    const result = await queryCollection.findOne(query);
+    console.log("line 71", result)
+    res.send(result)
+})
 
+/* ------------------------------ added query data on db ----------------------------- */
+app.post('/add-queries',async(req,res)=>{
+  const data = req.body
+  // console.log(data)
+  const result = await queryCollection.insertOne(data);
+  res.send(result)
+})
 
-
-
+/* ------------------------------ delete query ------------------------------ */
+app.delete('/query/:id',async(req,res)=>{
+  const id = req.params.id
+  const query = {_id:new ObjectId(id)}
+  // console.log("line 86", query)
+  const result = await queryCollection.deleteOne(query);
+  // console.log("line 88", result)
+  res.send(result)
+})
+/* ------------------------------ update quay ------------------------------ */
+app.put('/updateQuery/:id',async(req,res)=>{
+  const id = req.params.id
+  const filter = {_id:new ObjectId(id)}
+  const updateDoc = {
+    $set: req.body,
+  };
+  const options = { upsert: true };
+  const result = await queryCollection.updateOne(filter,updateDoc,options);
+  console.log("line 96", result)
+  res.send(result)
+})
 
   } finally {
     // Ensures that the client will close when you finish/error
