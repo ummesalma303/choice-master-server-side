@@ -1,12 +1,20 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
+
 require('dotenv').config();
 const port = process.env.PORT || 5000
 const app = express()
 
-app.use(cors())
-app.use(express.json())
 
+
+app.use(cors({
+  origin:["http://localhost:5173"],
+  credentials:true
+}))
+app.use(express.json())
+app.use(cookieParser())
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ot76b.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -21,6 +29,22 @@ const client = new MongoClient(uri, {
   }
 });
 
+
+const verify =(req,res,next)=>{
+  const token = req.cookies?.token
+  if (!token) {
+    return res.status(401).send({message:"unauthorize access"})
+  }
+  // verify token
+  jwt.verify(token,  process.env.SECRET_KEY, function(err, decoded) {
+    if (err) {
+      return res.status(401).send({message:"unauthorize access"})
+    }
+    req.user=decoded
+  });
+  next()
+}
+
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
@@ -34,6 +58,27 @@ async function run() {
     const recommendCollection = client.db("queryDB").collection("recommends");
 
 /* ----------------------------- write code here ---------------------------- */
+// console.log( process.env.DB_USER)
+// console.log('line 46==>', process.env.SECRET_KEY)
+// !jwt
+app.post('/jwt',(req,res)=>{
+  const user =req.body
+  var token = jwt.sign(user, process.env.SECRET_KEY, {expiresIn:"365d"});
+  res.cookie("token",token,{
+    httpOnly: true,
+    secure:false,
+    // sameSite:
+  }).send({success:true})
+})
+
+app.post('/logOut',(req,res)=>{
+  res.clearCookie('token',{
+    maxAge: 0,
+    httpOnly:true,
+    secure:false
+  }).send({success:true})
+})
+
 
 
 // *recommendation
@@ -128,9 +173,10 @@ app.get('/allQueries',async (req,res)=>{
     res.send(result)
 })
 /* ------------------------------- my queries ------------------------------- */
-app.get('/myQueries/:email',async (req,res)=>{
+app.get('/myQueries/:email', verify,async(req,res)=>{
   const email = req.params.email
   const query = {email:email}
+  console.log(req.cookies)
   // console.log(email)
   // const currentTime = parseInt(currentTime)
     const result = await queryCollection.find(query).sort({currentTime:-1}).toArray();
