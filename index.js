@@ -41,8 +41,8 @@ const verify =(req,res,next)=>{
       return res.status(401).send({message:"unauthorize access"})
     }
     req.user=decoded
+    next()
   });
-  next()
 }
 
 async function run() {
@@ -138,9 +138,13 @@ app.put('/recommend/:id',async(req,res)=>{
 
 /* -------------------------- recommendation for me -------------------------- */
 
-app.get('/myRecommendations/:email',async (req,res)=>{
+app.get('/myRecommendations/:email',verify,async (req,res)=>{
   const email = req.params.email
+  const decodedEmail = req.user?.email
   const query = {queryUserEmail:email}
+  if (decodedEmail !==email) {
+    return res.status(403).send({message:"forbidden access"})
+  }
   // console.log(email)
   // const currentTime = parseInt(currentTime)
     const result = await recommendCollection.find(query).sort({currentTime:-1}).toArray();
@@ -175,10 +179,15 @@ app.get('/allQueries',async (req,res)=>{
 /* ------------------------------- my queries ------------------------------- */
 app.get('/myQueries/:email', verify,async(req,res)=>{
   const email = req.params.email
+  const decodedEmail = req.user?.email
   const query = {email:email}
-  console.log(req.cookies)
+  // console.log('line 179',req.cookies)
+  // console.log('line 180',decodedEmail)
   // console.log(email)
   // const currentTime = parseInt(currentTime)
+  if (decodedEmail !==email) {
+    return res.status(403).send({message:"forbidden access"})
+  }
     const result = await queryCollection.find(query).sort({currentTime:-1}).toArray();
     // console.log("line 57", result)
     res.send(result)
