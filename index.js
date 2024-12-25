@@ -92,10 +92,14 @@ app.get('/recommendations/:queryId',async (req,res)=>{
 })
 
 /* ------------------------------- my recommendations ------------------------------- */
-app.get('/myRecommends/:email',async (req,res)=>{
+app.get('/myRecommends/:email',verify,async (req,res)=>{
   const email = req.params.email
-  
+  const decodedEmail = req.user?.email
   const query = {recommenderEmail:email}
+
+  if (decodedEmail !== email) {
+    return res.status(403).send({message:"forbidden access"})
+  }
     const result = await recommendCollection.find(query).sort({currentTime:-1}).toArray();
    
     res.send(result)
