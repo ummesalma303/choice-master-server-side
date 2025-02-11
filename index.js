@@ -170,13 +170,20 @@ app.get('/recentQueries',async (req,res)=>{
 /* ------------------------------- all queries ------------------------------ */
 app.get('/allQueries',async (req,res)=>{
   const search = req.query.search
-  // console.log(search)
+  const sort = req.query.sort
+  console.log('------------> 174',sort)
 
   let query = {}
   if (search) {
     query = {productName:{$regex:search,$options:"i"}}
   }
-    const result = await queryCollection.find(query).sort({currentTime:-1}).toArray();
+
+  let options ={}
+   if (sort ) {
+    options={sort:{currentDate:sort==='Recent Queries'?-1:1,currentTime:sort==='Recent Queries'?-1:1}}
+    // sort({currentTime:-1})
+  }
+    const result = await queryCollection.find(query,options).toArray();
     // console.log("line 54", result)
     res.send(result)
 })
