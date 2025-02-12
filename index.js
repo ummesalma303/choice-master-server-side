@@ -10,7 +10,11 @@ const app = express()
 
 
 app.use(cors({
-  origin:["http://localhost:5173"],
+  origin: [
+    "http://localhost:5173",
+    "https://choice-master-e1ccf.web.app", 
+    "https://choice-master-e1ccf.firebaseapp.com"
+  ],
   credentials:true
 }))
 app.use(express.json())
@@ -48,10 +52,10 @@ const verify =(req,res,next)=>{
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     /* --------------------- create database with collection --------------------- */
     const queryCollection = client.db("queryDB").collection("queries");
@@ -64,9 +68,12 @@ async function run() {
 app.post('/jwt',(req,res)=>{
   const user =req.body
   var token = jwt.sign(user, process.env.SECRET_KEY, {expiresIn:"365d"});
+  console.log(token)
   res.cookie("token",token,{
     httpOnly: true,
-    secure:false,
+    // secure:false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
     // sameSite:
   }).send({success:true})
 })
@@ -75,7 +82,9 @@ app.post('/logOut',(req,res)=>{
   res.clearCookie('token',{
     maxAge: 0,
     httpOnly:true,
-    secure:false
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    // secure:false
   }).send({success:true})
 })
 
@@ -95,6 +104,7 @@ app.get('/recommendations/:queryId',async (req,res)=>{
 app.get('/myRecommends/:email',verify,async (req,res)=>{
   const email = req.params.email
   const decodedEmail = req.user?.email
+  // console.log( decodedEmail)
   const query = {recommenderEmail:email}
 
   if (decodedEmail !== email) {
